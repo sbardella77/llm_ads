@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 const number = new Intl.NumberFormat("it-IT");
 const pct = (v: number) => `${v.toFixed(0)}%`;
+const ctr = new Intl.NumberFormat("it-IT", { style: "percent", minimumFractionDigits: 2 });
 
 function BudgetBar({ c }: { c: ClientOverview }) {
   const { spentPct, forecastPct } = c.budget;
@@ -89,7 +90,7 @@ export default async function Home() {
                 <td className="p-3 text-right">{formatMoney(c.budget.spendMicros, c.currency)}</td>
                 <td className="p-3"><BudgetBar c={c} /></td>
                 <td className="p-3 text-right">{number.format(c.clicks)}</td>
-                <td className="p-3 text-right">{c.impressions ? `${((c.clicks / c.impressions) * 100).toFixed(2)}%` : "–"}</td>
+                <td className="p-3 text-right">{c.impressions ? ctr.format(c.clicks / c.impressions) : "–"}</td>
                 <td className="p-3 text-right">{c.clicks ? formatMoney(c.budget.spendMicros / c.clicks, c.currency) : "–"}</td>
                 <td className="p-3 text-right">{number.format(Math.round(c.conversions))}</td>
                 <td className="p-3 text-right">{c.conversions ? formatMoney(c.budget.spendMicros / c.conversions, c.currency) : "–"}</td>
