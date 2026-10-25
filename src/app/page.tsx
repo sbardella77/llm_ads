@@ -1,4 +1,6 @@
-import { clientOverview, firstAgency, type ClientOverview } from "@/lib/dashboard";
+import { requireUser } from "@/lib/auth";
+import { agencyName, clientOverview, type ClientOverview } from "@/lib/dashboard";
+import { logout } from "./login/actions";
 import { formatMoney } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
@@ -23,16 +25,9 @@ function BudgetBar({ c }: { c: ClientOverview }) {
 }
 
 export default async function Home() {
-  const agency = await firstAgency();
-  if (!agency) {
-    return (
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="text-2xl font-semibold">LLMAds</h1>
-        <p className="mt-4">Nessuna agenzia nel database. Esegui <code>npm run db:seed</code>.</p>
-      </main>
-    );
-  }
-  const clients = await clientOverview(agency.id);
+  const user = await requireUser();
+  const name = await agencyName(user.agencyId);
+  const clients = await clientOverview(user.agencyId);
   const currency = clients[0]?.currency ?? "EUR";
   const totalSpend = clients.reduce((s, c) => s + c.budget.spendMicros, 0);
   const totalBudget = clients.reduce((s, c) => s + c.budget.budgetMicros, 0);
@@ -43,7 +38,7 @@ export default async function Home() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-slate-500">ChatGPT Ads · mese in corso</p>
-          <h1 className="text-2xl font-semibold">{agency.name}</h1>
+          <h1 className="text-2xl font-semibold">{name}</h1>
         </div>
         <dl className="flex gap-8 text-sm">
           <div>
@@ -59,6 +54,10 @@ export default async function Home() {
             <dd className="text-lg font-semibold">{atRisk} / {clients.length}</dd>
           </div>
         </dl>
+        <form action={logout} className="text-sm text-slate-500">
+          {user.name} ·{" "}
+          <button type="submit" className="underline hover:text-slate-900 dark:hover:text-slate-100">Esci</button>
+        </form>
       </header>
 
       <div className="mt-8 overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">

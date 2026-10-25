@@ -1,6 +1,8 @@
 import { sql } from "../src/lib/db";
 import { env } from "../src/lib/env";
+import { randomBytes } from "node:crypto";
 import { encryptSecret } from "../src/lib/crypto";
+import { hashPassword } from "../src/lib/auth/password";
 import { syncAll } from "../src/lib/sync";
 
 // Agenzia demo con clienti finti: le chiavi "mock_" usano sempre MockAdsApi.
@@ -18,8 +20,10 @@ async function main() {
     console.log("Agenzia demo già presente, rilancio solo il sync");
   } else {
     const [agency] = await db`INSERT INTO agencies (name) VALUES ('Agenzia Demo') RETURNING id`;
-    await db`INSERT INTO users (agency_id, email, name, role)
-      VALUES (${agency.id}, 'admin@demo.local', 'Admin Demo', 'admin')`;
+    const password = process.env.SEED_ADMIN_PASSWORD ?? randomBytes(9).toString("base64url");
+    await db`INSERT INTO users (agency_id, email, name, role, password_hash)
+      VALUES (${agency.id}, 'admin@demo.local', 'Admin Demo', 'admin', ${await hashPassword(password)})`;
+    console.log(`Login demo: admin@demo.local / ${password}`);
     for (const [i, c] of CLIENTS.entries()) {
       const [client] = await db`
         INSERT INTO clients (agency_id, name, monthly_budget_micros)

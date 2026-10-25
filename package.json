@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
-    "db:seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "db:seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "user:create": "tsx --env-file=.env.local scripts/create-user.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

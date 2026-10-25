@@ -52,7 +52,7 @@ export async function clientOverview(agencyId: string): Promise<ClientOverview[]
   }));
 }
 
-export async function firstAgency(): Promise<{ id: string; name: string } | undefined> {
-  const [row] = await sql()`SELECT id, name FROM agencies ORDER BY created_at LIMIT 1`;
-  return row as { id: string; name: string } | undefined;
+export async function agencyName(agencyId: string): Promise<string> {
+  const [row] = await sql()`SELECT name FROM agencies WHERE id = ${agencyId}`;
+  return row?.name ?? "";
 }

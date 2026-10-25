@@ -9,6 +9,7 @@ Stack: Next.js su Vercel, Postgres su Neon, [OpenAI Advertiser API](https://deve
 - Un job su Vercel Cron (`/api/cron/sync`) scarica campagne e insights giornalieri degli ultimi 35 giorni e li salva su Neon.
 - La dashboard legge solo da Neon e mostra spesa, budget, previsione di fine mese, clic, CTR, CPC, conversioni e CPA per cliente.
 - Quando un cliente supera l'80% o il 95% del budget mensile il sync registra un avviso in `alerts` (l'invio email arriva nel passo 3).
+- Login con email e password: password con scrypt, sessioni lato server (nel cookie c'è solo un token casuale, nel DB il suo hash). Ogni utente vede solo i clienti della propria agenzia.
 - In questa fase la piattaforma **legge e basta**: non modifica nulla negli account dei clienti.
 
 ## Struttura
@@ -20,6 +21,7 @@ Stack: Next.js su Vercel, Postgres su Neon, [OpenAI Advertiser API](https://deve
 | `src/lib/sync.ts` | Sincronizzazione account → Neon e avvisi di budget |
 | `src/lib/budget.ts` | Calcoli di budget e previsione (funzioni pure, testate) |
 | `src/app/page.tsx` | Dashboard multi-cliente |
+| `src/lib/auth/`, `src/app/login/` | Login, sessioni e logout |
 | `tests/` | Test unitari e test di integrazione su Postgres in memoria (PGlite) |
 
 ## Sviluppo
@@ -28,7 +30,8 @@ Stack: Next.js su Vercel, Postgres su Neon, [OpenAI Advertiser API](https://deve
 cp .env.example .env.local   # oppure: vercel env pull .env.local
 npm install
 npm run db:migrate           # applica lo schema
-npm run db:seed              # agenzia demo con 4 clienti finti + primo sync
+npm run db:seed              # agenzia demo con 4 clienti finti + primo sync, stampa il login demo
+npm run user:create -- "Nome Agenzia" email@agenzia.it "Nome" "password-lunga"
 npm run dev
 npm test
 ```
