@@ -4,6 +4,8 @@ import { decryptSecret } from "./crypto";
 import { unitsToMicros } from "./money";
 import { addDays, budgetStatus, localDate, monthStart, thresholdsToAlert } from "./budget";
 import { adsApiFor } from "./openai-ads";
+import { importAuditLogs } from "./changes";
+import { runRules } from "./rules/run";
 
 // Rilegge sempre gli ultimi giorni: spesa e conversioni di OpenAI si assestano con ritardo.
 const LOOKBACK_DAYS = 35;
@@ -86,6 +88,11 @@ export async function syncAdAccount(account: AdAccountRow): Promise<SyncResult> 
         conversions = EXCLUDED.conversions, synced_at = now()`;
 
     await recordBudgetAlerts(account.client_id, today);
+
+    // Storico e regole sono accessori: un loro errore non deve far fallire il sync dei dati.
+    const sinceUnix = Math.floor(Date.parse(`${range.since}T00:00:00Z`) / 1000);
+    await importAuditLogs(api, account, sinceUnix).catch((e) => console.error("audit_logs", account.id, e));
+    await runRules(account.agency_id, account.client_id).catch((e) => console.error("regole", account.id, e));
 
     await db`
       UPDATE ad_accounts SET last_synced_at = now() WHERE id = ${account.id}`;
