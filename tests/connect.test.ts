@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -22,7 +22,7 @@ const { connectAdAccount } = await import("../src/lib/connect");
 let agencyId: string;
 
 beforeAll(async () => {
-  await pg.exec(readFileSync("db/migrations/001_init.sql", "utf8"));
+  for (const f of readdirSync("db/migrations").sort()) await pg.exec(readFileSync(`db/migrations/${f}`, "utf8"));
   const { rows: [agency] } = await pg.query<{ id: string }>("INSERT INTO agencies (name) VALUES ('A') RETURNING id");
   agencyId = agency.id;
 });

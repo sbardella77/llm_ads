@@ -1,7 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { agencyName, clientOverview, type ClientOverview } from "@/lib/dashboard";
-import { logout } from "./login/actions";
 import Link from "next/link";
+import { Nav } from "@/components/nav";
 import { syncNow } from "./actions";
 import { formatMoney } from "@/lib/money";
 
@@ -38,6 +38,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
   const atRisk = clients.filter((c) => c.budget.spentPct >= 80 || c.budget.forecastPct > 100).length;
 
   return (
+    <>
+    <Nav user={user} current="/" />
     <main className="mx-auto max-w-6xl p-6 sm:p-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -66,10 +68,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
           <button type="submit" className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800">
             Sincronizza ora
           </button>
-        </form>
-        <form action={logout} className="text-sm text-slate-500">
-          {user.name} ·{" "}
-          <button type="submit" className="underline hover:text-slate-900 dark:hover:text-slate-100">Esci</button>
         </form>
         </div>
       </header>
@@ -100,7 +98,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
             {clients.map((c) => (
               <tr key={c.id} className="border-t border-slate-100 dark:border-slate-800">
                 <td className="p-3">
-                  <div className="font-medium">{c.name}</div>
+                  <Link href={`/clienti/${c.id}`} className="font-medium hover:underline">{c.name}</Link>
                   <div className="text-xs text-slate-500">
                     {c.lastSyncedAt ? `sync ${c.lastSyncedAt.toLocaleString("it-IT")}` : "mai sincronizzato"}
                   </div>
@@ -120,5 +118,6 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ c
         </table>
       </div>
     </main>
+    </>
   );
 }

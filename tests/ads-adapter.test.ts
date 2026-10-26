@@ -43,6 +43,41 @@ describe("HttpAdsApi", () => {
     expect(JSON.parse(url.searchParams.get("time_ranges[]")!)).toEqual({ type: "date_range", since: "2026-10-01", until: "2026-10-01" });
   });
 
+  it("mette in pausa e cambia il budget con POST sull'endpoint della campagna", async () => {
+    const campaign = { id: "cmpn_1", name: "A", status: "paused", updated_at: 1 };
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(campaign)));
+    vi.stubGlobal("fetch", fetchMock);
+    const api = new HttpAdsApi("k", "https://api.test/v1");
+
+    await api.pauseCampaign("cmpn_1");
+    await api.setDailyBudget("cmpn_1", 25_000_000);
+
+    const [[pauseUrl, pauseInit], [budgetUrl, budgetInit]] = fetchMock.mock.calls as unknown as [string, RequestInit][];
+    expect(pauseUrl).toBe("https://api.test/v1/campaigns/cmpn_1/pause");
+    expect(pauseInit.method).toBe("POST");
+    expect(budgetUrl).toBe("https://api.test/v1/campaigns/cmpn_1");
+    expect(JSON.parse(String(budgetInit.body))).toEqual({ budget: { daily_spend_limit_micros: 25_000_000 } });
+  });
+
+  it("legge il registro di audit dal timestamp indicato", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            object: "list",
+            data: [{ id: "al_1", audit_log_type: "update_campaign", obj_type: "campaign", obj_id: "cmpn_1", actor_type: "user", ts: 5 }],
+            has_more: false,
+          }),
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const logs = await new HttpAdsApi("k", "https://api.test/v1").listAuditLogs(1_700_000_000);
+    expect(logs[0].id).toBe("al_1");
+    const url = new URL((fetchMock.mock.calls[0] as unknown as [string])[0]);
+    expect(url.pathname).toBe("/v1/audit_logs");
+    expect(url.searchParams.get("start_time")).toBe("1700000000");
+  });
+
   it("solleva un errore leggibile sui 403", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("forbidden", { status: 403 })));
     await expect(new HttpAdsApi("k", "https://api.test/v1").getAdAccount()).rejects.toThrow("403");

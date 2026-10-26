@@ -1,5 +1,5 @@
 import type { AdsApi, DateRange } from "./client";
-import type { AdAccount, Campaign, InsightRow } from "./schemas";
+import type { AdAccount, AuditLog, Campaign, InsightRow } from "./schemas";
 
 // Dati finti con la stessa forma delle risposte reali, deterministici per chiave:
 // lo stesso cliente mostra sempre gli stessi numeri.
@@ -74,5 +74,44 @@ export class MockAdsApi implements AdsApi {
         };
       }),
     );
+  }
+
+  // Le scritture rispondono come l'API vera ma non cambiano i dati finti:
+  // il sync successivo riporta la campagna allo stato del mock.
+  private async campaign(campaignId: string): Promise<Campaign> {
+    const c = (await this.listCampaigns()).find((x) => x.id === campaignId);
+    if (!c) throw new Error(`Campagna ${campaignId} non trovata`);
+    return c;
+  }
+
+  async pauseCampaign(campaignId: string): Promise<Campaign> {
+    return { ...(await this.campaign(campaignId)), status: "paused" };
+  }
+
+  async activateCampaign(campaignId: string): Promise<Campaign> {
+    return { ...(await this.campaign(campaignId)), status: "active" };
+  }
+
+  async setDailyBudget(campaignId: string, micros: number): Promise<Campaign> {
+    return { ...(await this.campaign(campaignId)), budget: { daily_spend_limit_micros: micros } };
+  }
+
+  async listAuditLogs(sinceUnix: number): Promise<AuditLog[]> {
+    const [first] = await this.listCampaigns();
+    const ts = sinceUnix + 86_400 * (1 + (hash(this.seed) % 5));
+    return [
+      {
+        id: `audlog_mock_${hash(this.seed) % 100000}`,
+        audit_log_type: "update_campaign",
+        obj_type: "campaign",
+        obj_id: first.id,
+        item_name: first.name,
+        actor_type: "user",
+        actor_id: null,
+        campaign_id: first.id,
+        changes: { budget: { daily_spend_limit_micros: first.budget?.daily_spend_limit_micros } },
+        ts,
+      },
+    ];
   }
 }

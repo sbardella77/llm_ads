@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -25,7 +25,7 @@ let agencyId: string;
 let clientId: string;
 
 beforeAll(async () => {
-  await pg.exec(readFileSync("db/migrations/001_init.sql", "utf8"));
+  for (const f of readdirSync("db/migrations").sort()) await pg.exec(readFileSync(`db/migrations/${f}`, "utf8"));
   const { rows: [agency] } = await pg.query<{ id: string }>("INSERT INTO agencies (name) VALUES ('Test') RETURNING id");
   agencyId = agency.id;
   // Budget basso: il cliente supera sicuramente le soglie dell'80% e del 95%.

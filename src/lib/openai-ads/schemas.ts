@@ -41,6 +41,20 @@ export const insightRowSchema = z.object({
 });
 export type InsightRow = z.infer<typeof insightRowSchema>;
 
+export const auditLogSchema = z.object({
+  id: z.string(),
+  audit_log_type: z.string(),
+  obj_type: z.string(),
+  obj_id: z.string(),
+  item_name: z.string().nullish(),
+  actor_type: z.string(),
+  actor_id: z.string().nullish(),
+  campaign_id: z.string().nullish(),
+  changes: z.unknown().optional(),
+  ts: z.number().int().nullish(),
+});
+export type AuditLog = z.infer<typeof auditLogSchema>;
+
 export function listSchema<T extends z.ZodType>(item: T) {
   return z.object({
     object: z.literal("list"),

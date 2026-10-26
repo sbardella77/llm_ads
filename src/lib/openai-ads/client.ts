@@ -1,10 +1,12 @@
 import { z } from "zod";
 import {
   adAccountSchema,
+  auditLogSchema,
   campaignSchema,
   insightRowSchema,
   listSchema,
   type AdAccount,
+  type AuditLog,
   type Campaign,
   type InsightRow,
 } from "./schemas";
@@ -19,6 +21,12 @@ export interface AdsApi {
   getAdAccount(): Promise<AdAccount>;
   listCampaigns(): Promise<Campaign[]>;
   getDailyCampaignInsights(range: DateRange): Promise<InsightRow[]>;
+  pauseCampaign(campaignId: string): Promise<Campaign>;
+  activateCampaign(campaignId: string): Promise<Campaign>;
+  /** Sostituisce l'intero oggetto budget, come richiede POST /campaigns/{id}. */
+  setDailyBudget(campaignId: string, micros: number): Promise<Campaign>;
+  /** Modifiche fatte su OpenAI (anche da Ads Manager) da `sinceUnix` in poi. */
+  listAuditLogs(sinceUnix: number): Promise<AuditLog[]>;
 }
 
 export class AdsApiError extends Error {
@@ -48,6 +56,21 @@ export class HttpAdsApi implements AdsApi {
   private async get<T>(path: string, params: URLSearchParams, schema: z.ZodType<T>): Promise<T> {
     const res = await fetch(`${this.baseUrl}${path}?${params}`, {
       headers: { Authorization: `Bearer ${this.apiKey}`, Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) throw new AdsApiError(res.status, await res.text());
+    return schema.parse(await res.json());
+  }
+
+  private async post<T>(path: string, body: unknown, schema: z.ZodType<T>): Promise<T> {
+    const res = await fetch(`${this.baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
     });
     if (!res.ok) throw new AdsApiError(res.status, await res.text());
@@ -89,5 +112,26 @@ export class HttpAdsApi implements AdsApi {
     for (const f of INSIGHT_FIELDS) params.append("fields[]", f);
     params.append("time_ranges[]", JSON.stringify({ type: "date_range", ...range }));
     return this.getAll("/ad_account/insights", params, insightRowSchema);
+  }
+
+  pauseCampaign(campaignId: string): Promise<Campaign> {
+    return this.post(`/campaigns/${encodeURIComponent(campaignId)}/pause`, undefined, campaignSchema);
+  }
+
+  activateCampaign(campaignId: string): Promise<Campaign> {
+    return this.post(`/campaigns/${encodeURIComponent(campaignId)}/activate`, undefined, campaignSchema);
+  }
+
+  setDailyBudget(campaignId: string, micros: number): Promise<Campaign> {
+    return this.post(
+      `/campaigns/${encodeURIComponent(campaignId)}`,
+      { budget: { daily_spend_limit_micros: micros } },
+      campaignSchema,
+    );
+  }
+
+  listAuditLogs(sinceUnix: number): Promise<AuditLog[]> {
+    const params = new URLSearchParams({ limit: "100", order: "desc", start_time: String(sinceUnix) });
+    return this.getAll("/audit_logs", params, auditLogSchema);
   }
 }
