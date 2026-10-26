@@ -63,6 +63,11 @@ describe("syncAll", () => {
     expect(runs.rows.every((r) => r.status === "ok")).toBe(true);
   });
 
+  it("con agencyId sincronizza solo quell'agenzia", async () => {
+    expect(await syncAll("00000000-0000-0000-0000-000000000000")).toEqual([]);
+    expect((await syncAll(agencyId)).length).toBe(1);
+  });
+
   it("alimenta la dashboard multi-cliente", async () => {
     const [row] = await clientOverview(agencyId);
     expect(row.name).toBe("Cliente");

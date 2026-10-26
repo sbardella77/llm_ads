@@ -124,10 +124,12 @@ async function recordBudgetAlerts(clientId: string, today: string): Promise<void
   }
 }
 
-export async function syncAll(): Promise<SyncResult[]> {
+/** Senza agencyId sincronizza tutte le agenzie (cron); con agencyId solo quella (pulsante in dashboard). */
+export async function syncAll(agencyId?: string): Promise<SyncResult[]> {
   const accounts = (await sql()`
     SELECT id, agency_id, client_id, timezone, api_key_ciphertext, api_key_iv, api_key_tag
-    FROM ad_accounts ORDER BY last_synced_at NULLS FIRST`) as AdAccountRow[];
+    FROM ad_accounts WHERE ${agencyId ?? null}::uuid IS NULL OR agency_id = ${agencyId ?? null}::uuid
+    ORDER BY last_synced_at NULLS FIRST`) as AdAccountRow[];
   const results: SyncResult[] = [];
   // In sequenza: i limiti di chiamate OpenAI valgono per account e per IP.
   for (const a of accounts) results.push(await syncAdAccount(a));

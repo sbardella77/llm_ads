@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { agencyName, clientOverview, type ClientOverview } from "@/lib/dashboard";
 import { logout } from "./login/actions";
+import { syncNow } from "./actions";
 import { formatMoney } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,11 @@ export default async function Home() {
             <dd className="text-lg font-semibold">{atRisk} / {clients.length}</dd>
           </div>
         </dl>
+        <form action={syncNow}>
+          <button type="submit" className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800">
+            Sincronizza ora
+          </button>
+        </form>
         <form action={logout} className="text-sm text-slate-500">
           {user.name} ·{" "}
           <button type="submit" className="underline hover:text-slate-900 dark:hover:text-slate-100">Esci</button>
