@@ -8,7 +8,7 @@ import { adsApiFor } from "./openai-ads";
 // Rilegge sempre gli ultimi giorni: spesa e conversioni di OpenAI si assestano con ritardo.
 const LOOKBACK_DAYS = 35;
 
-interface AdAccountRow {
+export interface AdAccountRow {
   id: string;
   agency_id: string;
   client_id: string;

@@ -1,6 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { agencyName, clientOverview, type ClientOverview } from "@/lib/dashboard";
 import { logout } from "./login/actions";
+import Link from "next/link";
 import { syncNow } from "./actions";
 import { formatMoney } from "@/lib/money";
 
@@ -26,7 +27,8 @@ function BudgetBar({ c }: { c: ClientOverview }) {
   );
 }
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: Promise<{ collegato?: string }> }) {
+  const { collegato } = await searchParams;
   const user = await requireUser();
   const name = await agencyName(user.agencyId);
   const clients = await clientOverview(user.agencyId);
@@ -56,6 +58,10 @@ export default async function Home() {
             <dd className="text-lg font-semibold">{atRisk} / {clients.length}</dd>
           </div>
         </dl>
+        <div className="flex flex-wrap items-center gap-3">
+        <Link href="/connect" className="rounded bg-slate-900 px-3 py-1.5 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900">
+          Collega account OpenAI
+        </Link>
         <form action={syncNow}>
           <button type="submit" className="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800">
             Sincronizza ora
@@ -65,7 +71,14 @@ export default async function Home() {
           {user.name} ·{" "}
           <button type="submit" className="underline hover:text-slate-900 dark:hover:text-slate-100">Esci</button>
         </form>
+        </div>
       </header>
+
+      {collegato && (
+        <p role="status" className="mt-6 rounded border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950 dark:text-emerald-200">
+          Account &quot;{collegato}&quot; collegato e sincronizzato.
+        </p>
+      )}
 
       <div className="mt-8 overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
         <table className="w-full text-sm">
